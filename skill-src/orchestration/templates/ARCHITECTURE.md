@@ -12,14 +12,14 @@
 ## Contract
 <!-- endpoint – input – output – mock file in shared/mock/ -->
 | Endpoint | Input | Output | Mock |
-| --- | --- | --- | --- |
+| --- | --- | --- |
 
 ## Deploy
 <!-- backend: where; frontend: where; hello-world by hour 6 -->
 
 ## Tasks
-| # | Task | Owner | Area |
-| --- | --- | --- | --- |
+| # | Task | Notes |
+| --- | --- | --- |
 
 ## Rejected alternatives
 <!-- option – why not -->
