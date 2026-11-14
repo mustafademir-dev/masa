@@ -17,7 +17,7 @@ const SENSORS = [
 ];
 const TABS = [['months', 'Aylar'], ['calendar', 'Takvim'], ['compare', 'Kıyas']];
 
-const state = { sensor: 'modis', year: null, sel: null, tab: 'months', playing: false };
+const state = { sensor: 'merged', year: null, sel: null, tab: 'months', playing: false };
 let data, geo, map, timer, ready = false, hovered = null, orbitOK = false, orbitRaf = 0;
 const bboxes = {}, maxTotal = {}, ranges = {};
 
@@ -299,12 +299,20 @@ function renderPanel() {
   const row = years[state.year], n = sum(row), peak = row.indexOf(Math.max(...row));
   const totals = Object.values(years).map(sum), med = quantile(totals, 0.5);
   const ratio = med > 0 ? n / med : 0;
-  const level = n >= 200 ? 3 : n >= 50 ? 2 : 1;
+  // Birleşmiş seride güven, bir yıl dışarıda bırakılarak ölçülen doğrulama hatasından gelir.
+  const val = state.sensor === 'merged' ? data.validation?.[state.sel] : null;
+  const level = val ? { low: 1, medium: 2, high: 3 }[val.confidence] : n >= 200 ? 3 : n >= 50 ? 2 : 1;
+  const confTitle = val
+    ? 'Bir yıl dışarıda bırakılarak ölçüldü (2012–2025). Yüksek: yıllık hata %15 ve altı, yılda ortalama 300 ve üzeri tespit. Düşük: hata %30 üzeri ya da yılda 100 altı tespit.'
+    : "Yıllık tespit sayısına göre: 200 ve üzeri yüksek, 50–199 orta, 50'nin altı düşük.";
+  const confText = `${val ? 'Doğrulama' : 'Örneklem'} güveni: <b>${['düşük', 'orta', 'yüksek'][level - 1]}</b>`
+    + (val?.annual_wape != null ? ` · yıllık hata %${Math.round(val.annual_wape * 100)}` : '');
+  const unit = state.sensor === 'merged' ? 'VIIRS-eşdeğeri tespit' : 'tespit sayısı';
   const nYears = totals.length;
 
   let view = '';
   if (state.tab === 'months') {
-    view = `<h4>${state.year} yılında aylara göre ateş tespiti</h4><p>${sensor.label} · tespit sayısı</p>${monthBars(row, state.year)}`;
+    view = `<h4>${state.year} yılında aylara göre ateş tespiti</h4><p>${sensor.label} · ${unit}</p>${monthBars(row, state.year)}`;
   } else if (state.tab === 'calendar') {
     view = `<h4>${nYears} yılın takvimi</h4><p>Satır yıl, sütun ay; koyudan açığa tespit artar. Hücreye tıklayarak yılı seçin.</p>${calendar(years, state.year)}`;
   } else {
@@ -324,13 +332,13 @@ function renderPanel() {
       <div class="kpi"><span>Zirve ay</span><b>${MONTHS[peak]}</b><small>${fmt(row[peak])} tespit</small></div>
       <div class="kpi"><span>Medyana göre</span><b>${ratio ? '×' + ratio.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—'}</b><small>medyan ${fmt(med)}</small></div>
     </div>
-    <div class="conf" title="Yıllık tespit sayısına göre: 200 ve üzeri yüksek, 50–199 orta, 50'nin altı düşük.">
+    <div class="conf" title="${confTitle}">
       <span class="dots">${[1, 2, 3].map((i) => `<i class="${i <= level ? 'on' : ''}"></i>`).join('')}</span>
-      <span>Örneklem güveni: <b>${['düşük', 'orta', 'yüksek'][level - 1]}</b></span>
+      <span>${confText}</span>
     </div>
     <div class="tabs" role="tablist">${TABS.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${k === state.tab}">${l}</button>`).join('')}</div>
     <div class="view" role="tabpanel">${view}</div>
-    <div class="p-foot"><button class="btn" id="csv">CSV indir</button><span>${data.meta.sample ? 'Örnek veri: gerçek FIRMS sayıları değildir.' : (data.meta.note || '')}</span></div>`;
+    <div class="p-foot"><button class="btn" id="csv">CSV indir</button><span>${data.meta.sample ? 'Örnek veri: gerçek FIRMS sayıları değildir.' : (data.meta.notes?.[state.sensor] || data.meta.note || '')}</span></div>`;
 }
 
 function downloadCsv() {
@@ -446,7 +454,7 @@ async function main() {
   renderSensors();
   initMap();
   bind();
-  setSensor('modis');
+  setSensor(ranges.merged ? 'merged' : 'modis');
 }
 main().catch((err) => {
   console.error(err);
