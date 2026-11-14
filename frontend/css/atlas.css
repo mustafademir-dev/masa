@@ -48,7 +48,7 @@ button { cursor: pointer; }
 .brand .mark { width: 34px; height: 34px; border-radius: 9px; flex: none;
   background: radial-gradient(circle at 50% 70%, #ffd27a 0, #ff7a1a 38%, #7a2409 72%, #1a0a05 100%);
   box-shadow: 0 0 22px rgba(255, 122, 26, 0.55); }
-.brand strong { display: block; font: 700 19px/1 var(--display); letter-spacing: 0.22em; }
+.brand strong { display: block; font: 700 19px/1 var(--display); letter-spacing: 0.16em; }
 .brand div span { font-size: 11px; color: var(--ink-2); letter-spacing: 0.08em; text-transform: uppercase; }
 .pill { font: 600 10px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase;
   padding: 6px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
